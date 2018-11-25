@@ -76,19 +76,25 @@ public class Main
                     line = inputStream.readLine();														
                     inputs = line.split(" ");														
                     testCases = Integer.parseInt(inputs[0]);
-                    Set<Integer> globalSet = new HashSet<Integer>();
+                   
                     
                     // Then we continue reading until we're out of test cases to check
                     // If there were more lines than test cases, they would be looped over in the outer loop but this loop would not process any more
                     while (testCases > 0)
                     {
-                    	ArrayList<Integer> hostIDs = new ArrayList<Integer>();
-                    	ArrayList<Integer> heurAHostIDs = new ArrayList<Integer>();
-                    	ArrayList<Integer> heurBHostIDs = new ArrayList<Integer>();
-                    	ArrayList<Integer> heurCHostIDs = new ArrayList<Integer>();
-                    	ArrayList<Integer> heurRHostIDs = new ArrayList<Integer>();
+                    	// Hold the IDs of the hosts for each part
+                    	ArrayList<Integer> hostIDs = new ArrayList<Integer>();		// Part 1 & 2
+                    	ArrayList<Integer> heurAHostIDs = new ArrayList<Integer>();	// Part 3A
+                    	ArrayList<Integer> heurBHostIDs = new ArrayList<Integer>();	// Part 3B
+                    	ArrayList<Integer> heurCHostIDs = new ArrayList<Integer>(); // Part 4 & 5
+                    	
+                    	// Each test case has a unique graph with vertices for each person and edges for each friendship link
                     	SimpleGraph<Integer, DefaultWeightedEdge> graph = new SimpleGraph<Integer, DefaultWeightedEdge>(DefaultWeightedEdge.class);
+                    	
+                    	// Map stores each vertex's smallest social awkwardness value
                     	Map<Integer, Double> map = new HashMap<Integer, Double>(); 
+                    	
+                    	// N, F, M, and A from the instructions (respectively)
                     	int numPeople, friendLinks, numParties, numHosts;
                     	
                     	// Start reading each test case within each file here
@@ -99,12 +105,13 @@ public class Main
                         numParties = Integer.parseInt(inputs[2]);
                         numHosts = Integer.parseInt(inputs[3]);
                         
+                        // Adds a vertex to the graph for each person
                         for (int i = 1; i <= numPeople; i++)
                         {
                         	 graph.addVertex(i);
                         }
                         
-                        // Loop through F more lines
+                        // Loop through F more lines and add an edge to the graph for each person
                         for (int i = 0; i < friendLinks; i++)
                         {
                         	line = inputStream.readLine();                                                  
@@ -120,11 +127,9 @@ public class Main
                         	line = inputStream.readLine();
                         	inputs = line.split("\\s+");
                         	
-                        	// Add all host IDs to array of integers
+                        	// Add all host IDs to array of integers (used for parts 1 & 2)
                         	hostIDs.add(Integer.parseInt(inputs[0]));
                         }
-                        
-                        globalSet = graph.vertexSet();
 
                         // Part 1 & 2
                         if (numHosts > 0)
@@ -142,10 +147,11 @@ public class Main
                         	double heurASocial = 0.00;
                         	double heurBSocial = 0.00;
                         	double heurCSocial = 0.00;
-                        	Set<Integer> vSet = graph.vertexSet();
-                        	Set<Integer> xSet = new HashSet<Integer>();
-                        	for (Integer x : vSet) { map.put(x, -1.0); }
+                        	Set<Integer> vSet = graph.vertexSet();			// Static set of all graph vertices
+                        	Set<Integer> xSet = new HashSet<Integer>();		// Copy of static set, but make sure no hosts are in it
+                        	for (Integer x : vSet) { map.put(x, -1.0); }	// Reset map
                         	
+                        	// Setup xSet with proper nodes
                         	for (Integer x : vSet)
                         	{
                         		boolean checker = true;
@@ -157,10 +163,10 @@ public class Main
                         	}
                         	
                         	// Heuristic 1
-                        	Set<Integer> ySet = new HashSet<Integer>(); ySet.addAll(xSet);
+                        	Set<Integer> ySet = new HashSet<Integer>(); ySet.addAll(xSet);	// Dynamic set holds non-host vertices
                         	int hosts = 0;
-                        	String heurAHosts = "";
-                        	while (heurASocial != 1.0 && hosts <= numPeople)
+                        	String heurAHosts = "";											// For output
+                        	while (heurASocial != 1.0 && hosts <= numPeople)				// Loop until social awk = 1.0
                         	{
                         		Integer newHost = findPopular(graph, ySet);
                         		ySet.remove(newHost);
@@ -191,7 +197,7 @@ public class Main
                         		zSet.remove(newHostSub);
                         		heurBHostIDs.add(newHostSub);
                         		hostsB++;
-                        		updateSocials(heurBHostIDs, zSet, map, graph);
+                        		updateSocials(heurBHostIDs, zSet, map, graph);	// always keep map values accurate after adding hosts
 	                        	for (int i = 0; i < heurBHostIDs.size(); i++)
 	                        	{
 	                        		if (!(i + 1 < heurBHostIDs.size())) { heurBHosts += heurBHostIDs.get(i); }
@@ -262,7 +268,7 @@ public class Main
                         	// Heuristic 1
                         	Set<Integer> ySet = new HashSet<Integer>(); ySet.addAll(xSet);
                         	int hosts = 0;
-                        	while (hosts != numParties && hosts < numParties)
+                        	while (hosts != numParties && hosts < numParties)	// only difference from part 5
                         	{
                         		Integer newHost = findPopular(graph, ySet);
                         		ySet.remove(newHost);
@@ -289,7 +295,7 @@ public class Main
                         	heurBHostIDs.add(newHost);
                         	hostsB++;
                         	updateSocials(heurBHostIDs, zSet, map, graph);
-                        	while (hostsB != numParties && hostsB < numParties)
+                        	while (hostsB != numParties && hostsB < numParties) // only difference from part 5
                         	{
                         		Integer newHostSub = findAwkward(map, zSet);
                         		zSet.remove(newHostSub);
@@ -309,7 +315,6 @@ public class Main
                         	// END Heuristic 2
                         	
                         	// Custom Heuristic
-                        	//double randomHeurSocial = -1.0;		// for random brute force
                         	for (Integer x : vSet) { map.put(x, -1.0); }
                         	Set<Integer> uSet = new HashSet<Integer>(); uSet.addAll(xSet);
                         	int hostsC = 0;
@@ -318,7 +323,7 @@ public class Main
                         	heurCHostIDs.add(newHostB);
                         	hostsC++;
                         	updateSocials(heurCHostIDs, uSet, map, graph);
-                        	while (hostsC != numParties && hostsC < numParties)
+                        	while (hostsC != numParties && hostsC < numParties) // only difference from part 5
                         	{
                         		Integer newHostSub = findAwkwardNeighbor(map, uSet, graph);
                         		uSet.remove(newHostSub);
@@ -344,51 +349,6 @@ public class Main
                         		if (heurASocial > heurBSocial) { heurCSocial = heurBSocial; heurCHosts = heurBHosts; }
                         		else { heurCSocial = heurASocial; heurCHosts = heurAHosts; }
                         	}
-                        	
-                        	/* RANDOM HOST BRUTE FORCE (way too slow but fun)
-                        	if (!((heurCSocial < heurASocial) && (heurCSocial < heurBSocial)))
-                        	{     
-                            	if (numParties > 0)
-                                {
-                            		System.out.println("Test case : " + currentCase + ".");
-        	                    	System.out.println("File: " + s);
-                            		boolean a = false;
-    	                    		boolean b = false;
-    	                    		boolean c = false;
-    	                    		Map<String, Double> mapR = new HashMap<String, Double>();
-    	                    		String mapString = "";
-        	                    	while (randomHeurSocial == -1.0 || c == false)
-        	                    	{
-        	                    		a = false; b = false; c = false;
-        	                    		heurCHosts = "";
-        	                    		mapString = "";
-        	                    		heurRHostIDs.addAll(getRandomHosts(numParties, globalSet));
-        	                    		if (!mapR.containsKey(mapString)) 
-        	                    		{
-        	                    			Set<Integer> rSet = new HashSet<Integer>(); rSet.addAll(heurRHostIDs);
-            	                        	for (int i = 0; i < heurRHostIDs.size(); i++)
-            	                        	{
-            	                        		if (!(i + 1 < heurRHostIDs.size())) { heurCHosts += heurRHostIDs.get(i); mapString += heurRHostIDs.get(i); }
-            	                        		else { heurCHosts += heurRHostIDs.get(i) + ","; mapString += heurRHostIDs.get(i); }
-            	                        	}
-            	                        	updateSocials(heurRHostIDs, rSet, map, graph);
-            	                    		randomHeurSocial = calcSocial(graph, map, heurRHostIDs);
-            	                    		if (randomHeurSocial <= heurASocial) { a = true; }
-            	                    		if (randomHeurSocial <= heurBSocial) { b = true; }
-            	                    		if (a && b) { c = true; }
-            	                    		else { a = false; b = false; c = false; }
-            	                    		mapR.put(mapString, randomHeurSocial);
-            	                    		System.out.println(mapString);
-            	                    		
-        	                    		}
-        	                    		heurRHostIDs.removeAll(heurRHostIDs);
-        	                    		
-        	                    	}
-        	                    	System.out.println("ENDED WHILE LOOP!");
-        	                    	if (heurCSocial > randomHeurSocial) { heurCSocial = randomHeurSocial; System.out.println("heurCSocial: " + heurCSocial + " randomHeurSocial: " + randomHeurSocial); }
-                                }
-                        	}
-                        	*/ // END RANDOM BRUTE FORCE
                         	// END Custom Heuristic
 
                         	outputText.add("Heuristic 1 hosts are " + heurAHosts);
@@ -424,15 +384,16 @@ public class Main
         }
 	}
 	
+	// Rounds input double to places number of decimal places
 	public static double round(double value, int places) 
 	{
 	    if (places < 0) throw new IllegalArgumentException();
-
 	    BigDecimal bd = new BigDecimal(value);
 	    bd = bd.setScale(places, RoundingMode.HALF_UP);
 	    return bd.doubleValue();
 	}
 	
+	// Counts the number of neighbor nodes connected to input vertex
 	public static Integer countNeighbors(SimpleGraph<Integer, DefaultWeightedEdge> graph, Integer vertex)
 	{
 		Integer numNeighbors = 0;
@@ -441,13 +402,7 @@ public class Main
 		return numNeighbors;
 	}
 	
-	public static void testPrintNeighbors(SimpleGraph<Integer, DefaultWeightedEdge> graph, Integer vertex)
-	{
-		List<Integer> edges = Graphs.neighborListOf(graph, vertex);
-		for (Integer e : edges) { System.out.println(e); }
-	}
-	
-	
+	// Finds the vertex within the graph that has the most amount of neighbors
 	public static Integer findPopular(SimpleGraph<Integer, DefaultWeightedEdge> graph, Set<Integer> vSet)
 	{
 		Integer friendCount = 0;
@@ -468,54 +423,9 @@ public class Main
 		
 		return popVert;
 	}
-	
-	public static Integer findUnpopular(SimpleGraph<Integer, DefaultWeightedEdge> graph, Set<Integer> vSet)
-	{
-		Integer friendCount = 1000000;
-		Integer popVert = 0;
-		for (Integer i : vSet)
-		{
-			if (countNeighbors(graph, i) < friendCount)
-			{
-				friendCount = countNeighbors(graph, i);
-				popVert = i;
-			}
-			
-			else if (countNeighbors(graph, i) == friendCount)
-			{
-				if (popVert > i) { popVert = i; }
-			}
-		}
-		
-		return popVert;
-	}
-	
-	public static Integer findSuperPopular(SimpleGraph<Integer, DefaultWeightedEdge> graph, Set<Integer> vSet)
-	{
-		Integer friendCount = 0;
-		Integer popVert = 0;
 
-		for (Integer i : vSet)
-		{
-			int tempCounter = 0;
-			tempCounter += countNeighbors(graph, i);
-			List<Integer> edges = Graphs.neighborListOf(graph, i);
-			for (Integer e : edges) { tempCounter += countNeighbors(graph, e); }
-			
-			if (tempCounter > friendCount)
-			{
-				friendCount = tempCounter;
-				popVert = i;
-			}
-			else if (tempCounter == friendCount)
-			{
-				if (popVert > i) { popVert = i; }
-			}
-		}
-		
-		return popVert;
-	}
-	
+	// Finds the vertex within the vertex set that has the highest current social awkwardness
+	// Map should be updated after any hosts are added to ensure this function works properly
 	public static Integer findAwkward(Map<Integer, Double> map, Set<Integer> vertexSet)
 	{
 		double mostAwk = 0.00;
@@ -537,6 +447,7 @@ public class Main
 		return found;
 	}
 	
+	// Calculates the total average social awkwardness over all people on the graph
 	public static double calcSocial(SimpleGraph<Integer, DefaultWeightedEdge> graph, Map<Integer, Double> map, ArrayList<Integer> hostIDs)
 	{
 		double totalSocial = 0.00;
@@ -545,7 +456,7 @@ public class Main
     	Set<Integer> vSet = graph.vertexSet();
     	Set<Integer> xSet = new HashSet<Integer>();
     	for (Integer x : vSet) { map.put(x, -1.0); }
-    	
+   
     	for (Integer x : vSet)
     	{
     		boolean checker = true;
@@ -576,6 +487,7 @@ public class Main
 		return avgSocial;
 	}
 	
+	// Updates the map with the proper shortest paths and social awkwardness values
 	public static void updateSocials(ArrayList<Integer> hostIDs, Set<Integer> xSet, Map<Integer, Double> map, SimpleGraph<Integer, DefaultWeightedEdge> graph)
 	{
 		for (Integer i : hostIDs)
@@ -588,6 +500,7 @@ public class Main
     	}
 	}
 	
+	// Finds the vertex within the graph that is both: a neighbor to the vertex with the highest social awkwardness, and the most popular of these neighbors
 	public static Integer findAwkwardNeighbor(Map<Integer, Double> map, Set<Integer> vertexSet, SimpleGraph<Integer, DefaultWeightedEdge> graph)
 	{
 		Integer found = 0;
@@ -597,34 +510,5 @@ public class Main
 		for (Integer e : edges) { vSet.add(e); }
 		found = findPopular(graph, vSet);
 		return found;
-	}
-	
-
-	// Generate a random array of hosts (making sure to choose one random host at a time, then removing it from pool of possible selections)
-	// Use those hosts to calculate average social awkwardness
-	// Use map to hold each randomized selection of host's avg social awk value
-	// Each time we generate a new array of hosts, check the map to see if we already generated it
-	// If so, do not recalculate just generate another random array
-	// Keep doing this process until you calculate a average social awk value lower than both heurASocial and heurBSocial
-	public static ArrayList<Integer> getRandomHosts(int requiredHosts, Set<Integer> vSet)
-	{
-		ArrayList<Integer> vertexSet = new ArrayList<Integer>();
-		ArrayList<Integer> randoms = new ArrayList<Integer>();
-		
-		int highestV = 0;
-		
-		for (Integer v : vSet)
-		{
-			vertexSet.add(v);
-			if (v > highestV) { highestV = v; }
-		}
-		
-		for (int i = 0; i < requiredHosts; i++)
-		{
-			Integer randomHost = vertexSet.get(new Random().nextInt(vertexSet.size()));
-			randoms.add(randomHost);
-		}
-		
-		return randoms;
 	}
 }
